@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/CDR/.pio/libdeps/uno/LiquidCrystal/src",
+                "F:/documentos 2/unlam/taller de electrónica/proyecto/repositorio - Control de Riego v2 Soft/CDRfacu/CDR/include",
+                "F:/documentos 2/unlam/taller de electrónica/proyecto/repositorio - Control de Riego v2 Soft/CDRfacu/CDR/src",
+                "C:/.platformio/packages/framework-arduino-avr/cores/arduino",
+                "C:/.platformio/packages/framework-arduino-avr/variants/standard",
+                "C:/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
+                "C:/.platformio/packages/framework-arduino-avr/libraries/HID/src",
+                "C:/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
+                "C:/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
+                "C:/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
+                "C:/.platformio/packages/tool-unity"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64",
+            "mergeConfigurations": true,
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}
