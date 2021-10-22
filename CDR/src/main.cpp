@@ -8,14 +8,15 @@
 
 
 /* VARIABLES DE PROGRAMA */
-
+//VARIABLES DE PRUEBA
+uint32_t interrupcion = 0 ;
 // TIMER 2 
 
  bool timer2_500ms = 0;
 
 /* LIQUID CRYSTAL (necesita LiquidCrystal.h) */
 //usa los nº de pines de arduino
-const int rs = 13, en = 12, d4 = 11, d5 = 10, d6 = 9, d7 = 8;
+const int rs = 13, en = 12, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void LCD_setup() {
@@ -131,25 +132,58 @@ void DHT11_lectura() {
   }
 }
 
+void GPIO_setup (void) //Congif de puertos
+{
+  //pinMode(LED_BUILTIN,OUTPUT); //led 
+  //pinMode(PD1,OUTPUT);
+  //pinMode(13, OUTPUT);
+  //pinMode(12, OUTPUT);
+  MCUCR |= (1 << PUD ); //habilito las pull up en general port b 
+  DDRB &= 0b11111100;//((0 << DDB0) | (0 << DDB1)); //coniguracion i/o pines port b con 1-> salida  
+  PORTB |= 0b00000011;//((1<< PORTB0) || (1<< PORTB1)  ); //(ACTIVO LAS PULLUP EN LAS ENTRADAS PB0 Y 1 )
+}
 
+
+void encoder_setup (void)
+{
+  cli();// DESHABILITO LAS INTERRUPCIONES DURANTE LA CONFIG 
+  PCICR |= 0b00000001;//(1 << PCIE0);  //HABILITO LA INT POR CAMBIO EN LOS PINES PCINT  7 - 0 
+  PCMSK0 |= 0b00000011;//((1 << PCINT0) | (1 << PCINT1)); //CONFIGURO LA MÁSCARA DE INTERRUPCION PARA LOS PINES PB0 Y PB1 
+  sei();
+}
+
+
+ISR (PCINT0_vect)
+{
+  digitalWrite(13, HIGH);
+  delay(1000); // Wait for 1000 millisecond(s)
+  digitalWrite(13, LOW);
+
+  delay(1000); // Wait for 1000 millisecond(s
+
+  ++interrupcion;
+
+}
 
 void setup() {
+  GPIO_setup();
   LCD_setup();
   timer2_setup();
   DHT11_setup();
+  encoder_setup();
 }
 
 void loop() {
   if(timer2_500ms)
   {
     lcd.setCursor(0,1);
-    lcd.print("uno             ");
+    lcd.print(interrupcion);
     DHT11_lectura();
   }
-  else 
+  /*else 
   {
     lcd.setCursor(0,1);
     lcd.print("cero            ");
-  }
+  }*/
 }
 
