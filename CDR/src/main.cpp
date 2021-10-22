@@ -16,7 +16,7 @@ uint32_t interrupcion = 0 ;
 
 /* LIQUID CRYSTAL (necesita LiquidCrystal.h) */
 //usa los nº de pines de arduino
-const int rs = 13, en = 12, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+const int rs = 11, en = 12, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void LCD_setup() {
@@ -65,7 +65,7 @@ ISR(TIMER2_COMPA_vect)
 }
 
 
-#define DHTPIN 4    
+#define DHTPIN 10    
 
 
 #define DHTTYPE    DHT11     // DHT 11
@@ -136,8 +136,8 @@ void GPIO_setup (void) //Congif de puertos
 {
   //pinMode(LED_BUILTIN,OUTPUT); //led 
   //pinMode(PD1,OUTPUT);
-  //pinMode(13, OUTPUT);
-  //pinMode(12, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(2, OUTPUT);
   MCUCR |= (1 << PUD ); //habilito las pull up en general port b 
   DDRB &= 0b11111100;//((0 << DDB0) | (0 << DDB1)); //coniguracion i/o pines port b con 1-> salida  
   PORTB |= 0b00000011;//((1<< PORTB0) || (1<< PORTB1)  ); //(ACTIVO LAS PULLUP EN LAS ENTRADAS PB0 Y 1 )
@@ -155,11 +155,6 @@ void encoder_setup (void)
 
 ISR (PCINT0_vect)
 {
-  digitalWrite(13, HIGH);
-  delay(1000); // Wait for 1000 millisecond(s)
-  digitalWrite(13, LOW);
-
-  delay(1000); // Wait for 1000 millisecond(s
 
   ++interrupcion;
 
@@ -177,8 +172,13 @@ void loop() {
   if(timer2_500ms)
   {
     lcd.setCursor(0,1);
-    lcd.print(interrupcion);
+    Serial.println(interrupcion);
     DHT11_lectura();
+    if(bitRead(interrupcion,0) == 0)
+    {
+      digitalWrite(2,HIGH);
+    }
+    else digitalWrite(2,LOW);
   }
   /*else 
   {
