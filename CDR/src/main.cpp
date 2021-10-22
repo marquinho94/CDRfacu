@@ -11,7 +11,7 @@
 
 // TIMER 2 
 
- uint8_t timer2_500ms = 0;
+ bool timer2_500ms = 0;
 
 /* LIQUID CRYSTAL (necesita LiquidCrystal.h) */
 //usa los nº de pines de arduino
@@ -64,11 +64,92 @@ ISR(TIMER2_COMPA_vect)
 }
 
 
+#define DHTPIN 4    
+
+
+#define DHTTYPE    DHT11     // DHT 11
+
+DHT_Unified dht(DHTPIN, DHTTYPE);
+
+//uint32_t delayMS;
+
+void DHT11_setup() {
+  Serial.begin(9600);
+  // Initialize device.
+  dht.begin();
+  Serial.println(F("DHTxx Unified Sensor Example"));
+  // Print temperature sensor details.
+  sensor_t sensor;
+  dht.temperature().getSensor(&sensor);
+  Serial.println(F("------------------------------------"));
+  Serial.println(F("Temperature Sensor"));
+  Serial.print  (F("Sensor Type: ")); Serial.println(sensor.name);
+  Serial.print  (F("Driver Ver:  ")); Serial.println(sensor.version);
+  Serial.print  (F("Unique ID:   ")); Serial.println(sensor.sensor_id);
+  Serial.print  (F("Max Value:   ")); Serial.print(sensor.max_value); Serial.println(F("°C"));
+  Serial.print  (F("Min Value:   ")); Serial.print(sensor.min_value); Serial.println(F("°C"));
+  Serial.print  (F("Resolution:  ")); Serial.print(sensor.resolution); Serial.println(F("°C"));
+  Serial.println(F("------------------------------------"));
+  // Print humidity sensor details.
+  dht.humidity().getSensor(&sensor);
+  Serial.println(F("Humidity Sensor"));
+  Serial.print  (F("Sensor Type: ")); Serial.println(sensor.name);
+  Serial.print  (F("Driver Ver:  ")); Serial.println(sensor.version);
+  Serial.print  (F("Unique ID:   ")); Serial.println(sensor.sensor_id);
+  Serial.print  (F("Max Value:   ")); Serial.print(sensor.max_value); Serial.println(F("%"));
+  Serial.print  (F("Min Value:   ")); Serial.print(sensor.min_value); Serial.println(F("%"));
+  Serial.print  (F("Resolution:  ")); Serial.print(sensor.resolution); Serial.println(F("%"));
+  Serial.println(F("------------------------------------"));
+  // Set delay between sensor readings based on sensor details.
+  //delayMS = sensor.min_delay / 1000; -> USO EL TICK DE GENERADO POR TIMER2
+}
+
+void DHT11_lectura() {
+  // Delay between measurements.
+  //delay(delayMS);
+  // Get temperature event and print its value.
+  //-> USO EL TICK DE GENERADO POR TIMER2
+  sensors_event_t event;
+  dht.temperature().getEvent(&event);
+  if (isnan(event.temperature)) {
+    Serial.println(F("Error reading temperature!"));
+  }
+  else {
+    Serial.print(F("Temperature: "));
+    Serial.print(event.temperature);
+    Serial.println(F("°C"));
+  }
+  // Get humidity event and print its value.
+  dht.humidity().getEvent(&event);
+  if (isnan(event.relative_humidity)) {
+    Serial.println(F("Error reading humidity!"));
+  }
+  else {
+    Serial.print(F("Humidity: "));
+    Serial.print(event.relative_humidity);
+    Serial.println(F("%"));
+  }
+}
+
+
+
 void setup() {
   LCD_setup();
   timer2_setup();
+  DHT11_setup();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  if(timer2_500ms)
+  {
+    lcd.setCursor(0,1);
+    lcd.print("uno             ");
+    DHT11_lectura();
+  }
+  else 
+  {
+    lcd.setCursor(0,1);
+    lcd.print("cero            ");
+  }
 }
+
