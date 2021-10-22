@@ -1,9 +1,17 @@
 
 #include <Arduino.h>
 #include<LiquidCrystal.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
+
 
 
 /* VARIABLES DE PROGRAMA */
+
+// TIMER 2 
+
+ uint8_t timer2_500ms = 0;
 
 /* LIQUID CRYSTAL (necesita LiquidCrystal.h) */
 //usa los nº de pines de arduino
@@ -24,7 +32,7 @@ void LCD_setup() {
     */
 }
 void timer2_setup(void)
-[
+{
   cli();
   //set timer2 
   TCCR2A = 0;// 
@@ -35,11 +43,11 @@ void timer2_setup(void)
   // turn on CTC mode >> cuando llega al valo de comparación se resetea
   TCCR2A |= (1 << WGM21);
   // Set CS11 bit for 1024 prescaler
-  TCCR2B |= ((1 << CS22) | (1 << CS21) | (1 << CS20))
+  TCCR2B |= ((1 << CS22) | (1 << CS21) | (1 << CS20));
   // enable timer compare interrupt solo contra el regsitro A 
   TIMSK2 |= (1 << OCIE2A);
   sei();//allow interrupts
-]
+}
 
 /*interrupcion timer 2 cada 10ms (100hz) 
 Nesecita declarar variable global bit timer2_500ms=0 */
@@ -58,6 +66,7 @@ ISR(TIMER2_COMPA_vect)
 
 void setup() {
   LCD_setup();
+  timer2_setup();
 }
 
 void loop() {
