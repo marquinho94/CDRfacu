@@ -232,9 +232,21 @@ void rtcc_lectura_prueba () {
     //delay(3000);
 }
 
+void ADC_setup(void)
+{
+ // analogReadResolution(10);
+}
 
+uint16_t ADC_lectura(void)
+{
+  //if(bitRead(ADCSRA,ADIF)) //miro el flag de conversión finalizada 
+  //A RETOMAR MÁS ADELANTE CON LA COFIGURACIÓN COMPLETA DE LOS REGISTROS
+  
 
+ return analogRead(A0); //sensor de humedad de suelo
+  
 
+}
 
 void setup() {
   GPIO_setup();
@@ -243,12 +255,21 @@ void setup() {
   DHT11_setup();
   encoder_setup();
   rtcC_setup();
+  //ADC_setup();
 }
 
 void loop() {
-  if(timer2_500ms)
+
+
+
+  lcd.setCursor(0,0);
+    uint16_t a = 0;
+    a = ADC_lectura();
+    lcd.print("heyyy");
+    lcd.print(a); 
+  /*if(timer2_500ms)
   {
-    lcd.setCursor(0,1);
+    
     Serial.println(interrupcion);
     DHT11_lectura();
     if(bitRead(interrupcion,0) == 0)
@@ -257,7 +278,9 @@ void loop() {
       rtcc_lectura_prueba();
     }
     else digitalWrite(2,LOW);
+    
   }
+  */
   /*else 
   {
     lcd.setCursor(0,1);
