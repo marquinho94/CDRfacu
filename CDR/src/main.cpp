@@ -4,12 +4,20 @@
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <DHT_U.h>
-
-
+#include <RTClib.h>
+#include <Wire.h>
 
 /* VARIABLES DE PROGRAMA */
 //VARIABLES DE PRUEBA
 uint32_t interrupcion = 0 ;
+
+//VARIABLES RTCC 
+RTC_DS1307 rtc;
+
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
+
+
 // TIMER 2 
 
  bool timer2_500ms = 0;
@@ -160,12 +168,81 @@ ISR (PCINT0_vect)
 
 }
 
+
+// Date and time functions using a DS1307 RTC connected via I2C and Wire lib
+
+
+
+
+void rtcC_setup () 
+{
+  //Serial.begin(9600); Iniciado en el setup dht11
+
+  rtc.begin(); //Inicializamos el RTC
+  Serial.println("Estableciendo Hora y fecha...");
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  Serial.println("DS1307 actualizado con la hora y fecha que se compilo este programa:");
+  Serial.print("Fecha = ");
+  Serial.print(__DATE__);
+  Serial.print("  Hora = ");
+  Serial.println(__TIME__);
+}
+void rtcc_lectura_prueba () {
+    DateTime now = rtc.now();
+
+    Serial.print(now.year(), DEC);
+    Serial.print('/');
+    Serial.print(now.month(), DEC);
+    Serial.print('/');
+    Serial.print(now.day(), DEC);
+    Serial.print(" (");
+    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
+    Serial.print(") ");
+    Serial.print(now.hour(), DEC);
+    Serial.print(':');
+    Serial.print(now.minute(), DEC);
+    Serial.print(':');
+    Serial.print(now.second(), DEC);
+    Serial.println();
+
+    Serial.print(" since midnight 1/1/1970 = ");
+    Serial.print(now.unixtime());
+    Serial.print("s = ");
+    Serial.print(now.unixtime() / 86400L);
+    Serial.println("d");
+
+    // calculate a date which is 7 days, 12 hours, 30 minutes, and 6 seconds into the future
+    DateTime future (now + TimeSpan(7,12,30,6));
+
+    Serial.print(" now + 7d + 12h + 30m + 6s: ");
+    Serial.print(future.year(), DEC);
+    Serial.print('/');
+    Serial.print(future.month(), DEC);
+    Serial.print('/');
+    Serial.print(future.day(), DEC);
+    Serial.print(' ');
+    Serial.print(future.hour(), DEC);
+    Serial.print(':');
+    Serial.print(future.minute(), DEC);
+    Serial.print(':');
+    Serial.print(future.second(), DEC);
+    Serial.println();
+
+    Serial.println();
+    //delay(3000);
+}
+
+
+
+
+
 void setup() {
   GPIO_setup();
   LCD_setup();
   timer2_setup();
   DHT11_setup();
   encoder_setup();
+  rtcC_setup();
 }
 
 void loop() {
@@ -177,6 +254,7 @@ void loop() {
     if(bitRead(interrupcion,0) == 0)
     {
       digitalWrite(2,HIGH);
+      rtcc_lectura_prueba();
     }
     else digitalWrite(2,LOW);
   }
