@@ -8,14 +8,14 @@
 #include <Wire.h>
 
 /* VARIABLES DE PROGRAMA */
+
+typedef enum estados_automatico {INICIO, Sensor_Suelo, Riego, Sensor_DHT11, Ventilacion, Sensor_LDR} estados_CDR_Automatico;
+
+
+
+
 //VARIABLES DE PRUEBA
 uint32_t interrupcion = 0 ;
-
-//VARIABLES RTCC 
-RTC_DS1307 rtc;
-
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-
 
 
 // TIMER 2 
@@ -144,6 +144,7 @@ void GPIO_setup (void) //Congif de puertos
 {
   //pinMode(LED_BUILTIN,OUTPUT); //led 
   //pinMode(PD1,OUTPUT);
+  pinMode(A3,OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(2, OUTPUT);
   MCUCR |= (1 << PUD ); //habilito las pull up en general port b 
@@ -171,6 +172,12 @@ ISR (PCINT0_vect)
 
 // Date and time functions using a DS1307 RTC connected via I2C and Wire lib
 
+
+
+//VARIABLES RTCC 
+RTC_DS1307 rtc;
+
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
 
 
@@ -248,6 +255,22 @@ uint16_t ADC_lectura(void)
 
 }
 
+
+void automatico_MEF (void)
+
+switch (estados_CDR_Automatico)
+{
+  case INICIO:
+
+    lcd.setCursor(0,0);
+    lcd.print("CDR AUTOMATICO");
+    estados_CDR_Automatico = Sensor_Suelo;
+    break;
+  case  Sensor_Suelo:
+}
+
+
+
 void setup() {
   GPIO_setup();
   LCD_setup();
@@ -260,13 +283,20 @@ void setup() {
 
 void loop() {
 
+  estados_CDR_Automatico = INICIO;
 
-
-  lcd.setCursor(0,0);
+  lcd.setCursor(0,1);
+  lcd.flush();
     uint16_t a = 0;
     a = ADC_lectura();
     lcd.print("heyyy");
     lcd.print(a); 
+
+  if(a <= 512)
+  {
+    digitalWrite(A3,HIGH);
+  }
+  else digitalWrite(A3,LOW);
   /*if(timer2_500ms)
   {
     
