@@ -9,7 +9,8 @@
 
 /* VARIABLES DE PROGRAMA */
 
-typedef enum estados_automatico {INICIO, Sensor_Suelo, Riego, Sensor_DHT11, Ventilacion, Sensor_LDR} estados_CDR_Automatico;
+typedef enum  {INICIO, Sensor_Suelo, Riego, Sensor_DHT11, Ventilacion, Sensor_LDR} estados_automatico;
+estados_automatico estados_CDR_Automatico;
 
 
 
@@ -257,18 +258,41 @@ uint16_t ADC_lectura(void)
 
 
 void automatico_MEF (void)
-
-switch (estados_CDR_Automatico)
 {
-  case INICIO:
 
-    lcd.setCursor(0,0);
-    lcd.print("CDR AUTOMATICO");
-    estados_CDR_Automatico = Sensor_Suelo;
-    break;
-  case  Sensor_Suelo:
+  static uint16_t suelo_ADC[11];
+  static uint8_t muestras_suelo = 0; 
+
+  switch ( estados_CDR_Automatico )
+  {
+    case INICIO:
+
+      lcd.setCursor(0,0);
+      lcd.print("CDR AUTOMATICO");
+      estados_CDR_Automatico = Sensor_Suelo;
+      break;
+    case  Sensor_Suelo:
+      if(muestras_suelo < 10)
+      {  
+        suelo_ADC[muestras_suelo] = analogRead(A0);
+        ++muestras_suelo;
+      }
+      else 
+      { 
+        for(int i=0; i < 10 ; i ++ )
+        {
+          suelo_ADC[10] += suelo_ADC[i];
+        }
+        suelo_ADC[10] = (suelo_ADC[10]/10);
+        estados_CDR_Automatico = Riego;
+      }
+      break;
+
+    case Riego: 
+  }
+    
+
 }
-
 
 
 void setup() {
