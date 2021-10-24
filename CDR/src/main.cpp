@@ -8,12 +8,15 @@
 #include <Wire.h>
 
 /* VARIABLES DE PROGRAMA */
-
+bool timer2_flag250 = false;
 typedef enum  {INICIO, Sensor_Suelo, Riego, Sensor_DHT11, Ventilacion, Sensor_LDR} estados_automatico;
 estados_automatico estados_CDR_Automatico;
+uint16_t Humedad_suelo = 0x512;
+bool Riego_encender = 0; 
+uint16_t DHT11_temp = 0;
+uint16_t DHT11_humedad = 0;
 
-
-
+bool Ventilacion_encender = 0;
 
 //VARIABLES DE PRUEBA
 uint32_t interrupcion = 0 ;
@@ -65,7 +68,16 @@ Nesecita declarar variable global bit timer2_500ms=0 */
 ISR(TIMER2_COMPA_vect)
 {
   static uint8_t timer2_contador = 0; //mantiene el valor de la ejecución anterior 
+  static uint8_t timer2_contador_250 = 0;
+  
+
   ++timer2_contador; 
+  ++timer2_contador_250;
+  if(timer2_contador_250 >= 25)
+  {
+    timer2_flag250 = true;
+    timer2_contador_250 =0;
+  }
   if(timer2_contador >= 50)
   {
     timer2_500ms ^= 1; // operación XOR con 1 para togglear el flag
@@ -259,9 +271,11 @@ uint16_t ADC_lectura(void)
 
 void automatico_MEF (void)
 {
-
+  sensors_event_t event; //lo uso para levantar los valroes del sensor, si bien son float las funciones bla bla bla bla  
   static uint16_t suelo_ADC[11];
+  static float DHT11_temp_hum [5][2]; //tomo menos muestras por el tiempo de demora
   static uint8_t muestras_suelo = 0; 
+  static uint8_t muestras_DHT11 = 0;
 
   switch ( estados_CDR_Automatico )
   {
@@ -276,6 +290,7 @@ void automatico_MEF (void)
       {  
         suelo_ADC[muestras_suelo] = analogRead(A0);
         ++muestras_suelo;
+        estados_CDR_Automatico = Sensor_DHT11;
       }
       else 
       { 
@@ -283,15 +298,45 @@ void automatico_MEF (void)
         {
           suelo_ADC[10] += suelo_ADC[i];
         }
-        suelo_ADC[10] = (suelo_ADC[10]/10);
+        suelo_ADC[10] = (suelo_ADC[10]/10);//guardo el promedio de los 10 valores en la ultima posición del array
         estados_CDR_Automatico = Riego;
       }
       break;
 
-    case Riego: 
-  }
-    
+    case Riego:
 
+      if(suelo_ADC[10] < Humedad_suelo)
+      {
+        Riego_encender = true ;
+      }
+      else if (suelo_ADC[10] >= Humedad_suelo * 1,05 )
+      {
+        Riego_encender = false ;
+      }
+    estados_CDR_Automatico = Sensor_DHT11 ;
+
+    case Sensor_DHT11:
+
+      if(muestras_DHT11 < 4 && timer2_flag250 == true)
+      { dht.temperature().getEvent(&event);
+        DHT11_temp_hum[muestras_DHT11][1] = event.temperature ;// levanto el dato de la temp del dht11
+        dht.humidity().getEvent(&event);
+        DHT11_temp_hum[muestras_DHT11][2] = event.relative_humidity;// levanto el dato de la HUMEDAD del dht11
+        ++muestras_DHT11;
+        timer2_flag250 = false; 
+        estados_CDR_Automatico = Sensor_LDR; 
+      }
+      else 
+      { 
+        for(int i=0; i < 4 ; i ++ )
+        {
+          suelo_ADC[4] += suelo_ADC[i];
+        }
+        suelo_ADC[10] = (suelo_ADC[10]/10);//guardo el promedio de los 10 valores en la ultima posición del array
+        estados_CDR_Automatico = Riego;
+      }
+      break;
+  }
 }
 
 
