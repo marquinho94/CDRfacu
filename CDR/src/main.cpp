@@ -309,7 +309,7 @@ void automatico_MEF (void)
       {
         Riego_encender = true ;
       }
-      else if (suelo_ADC[10] >= Humedad_suelo * 1,05 )
+      else if (suelo_ADC[10] >= (Humedad_suelo * 1.05) )
       {
         Riego_encender = false ;
       }
@@ -319,9 +319,9 @@ void automatico_MEF (void)
 
       if(muestras_DHT11 < 4 && timer2_flag250 == true)
       { dht.temperature().getEvent(&event);
-        DHT11_temp_hum[muestras_DHT11][1] = event.temperature ;// levanto el dato de la temp del dht11
+        DHT11_temp_hum[muestras_DHT11][0] = event.temperature ;// levanto el dato de la temp del dht11
         dht.humidity().getEvent(&event);
-        DHT11_temp_hum[muestras_DHT11][2] = event.relative_humidity;// levanto el dato de la HUMEDAD del dht11
+        DHT11_temp_hum[muestras_DHT11][1] = event.relative_humidity;// levanto el dato de la HUMEDAD del dht11
         ++muestras_DHT11;
         timer2_flag250 = false; 
         estados_CDR_Automatico = Sensor_LDR; 
@@ -330,10 +330,12 @@ void automatico_MEF (void)
       { 
         for(int i=0; i < 4 ; i ++ )
         {
-          suelo_ADC[4] += suelo_ADC[i];
+          DHT11_temp_hum[4][0] += DHT11_temp_hum[i][0];
+          DHT11_temp_hum[4][1] += DHT11_temp_hum[i][1];
         }
-        suelo_ADC[10] = (suelo_ADC[10]/10);//guardo el promedio de los 10 valores en la ultima posición del array
-        estados_CDR_Automatico = Riego;
+        DHT11_temp_hum[4][0] = (DHT11_temp_hum[4][0]/4);//guardo el promedio 
+        DHT11_temp_hum[4][1] = (DHT11_temp_hum[4][1]/4);
+        estados_CDR_Automatico = Ventilacion;
       }
       break;
   }
