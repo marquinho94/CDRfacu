@@ -338,6 +338,7 @@ void automatico_MEF (void)
         estados_CDR_Automatico = Ventilacion;
       }
       break;
+      case
   }
 }
 
