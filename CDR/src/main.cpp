@@ -13,8 +13,8 @@ typedef enum  {INICIO, Sensor_Suelo, Riego, Sensor_DHT11, Ventilacion, Sensor_LD
 estados_automatico estados_CDR_Automatico;
 uint16_t Humedad_suelo = 0x512;
 bool Riego_encender = 0; 
-uint16_t DHT11_temp = 0;
-uint16_t DHT11_humedad = 0;
+float temp_ref = 0;
+float humedad_ref = 0;
 
 bool Ventilacion_encender = 0;
 
@@ -277,13 +277,17 @@ void automatico_MEF (void)
   static uint8_t muestras_suelo = 0; 
   static uint8_t muestras_DHT11 = 0;
 
+  Serial.println (estados_CDR_Automatico);
   switch ( estados_CDR_Automatico )
   {
     case INICIO:
-
+      
       lcd.setCursor(0,0);
       lcd.print("CDR AUTOMATICO");
       estados_CDR_Automatico = Sensor_Suelo;
+      // sentencias de prueba //
+
+
       break;
     case  Sensor_Suelo:
       if(muestras_suelo < 10)
@@ -325,23 +329,56 @@ void automatico_MEF (void)
         ++muestras_DHT11;
         timer2_flag250 = false; 
         estados_CDR_Automatico = Sensor_LDR; 
+        
       }
       else 
       { 
+        DHT11_temp_hum[4][0] = 0;//si no limpio el dato antes de hacer el promedio se sigue ncrementando 
+        DHT11_temp_hum[4][1] = 0;
+
         for(int i=0; i < 4 ; i ++ )
         {
           DHT11_temp_hum[4][0] += DHT11_temp_hum[i][0];
           DHT11_temp_hum[4][1] += DHT11_temp_hum[i][1];
         }
-        DHT11_temp_hum[4][0] = (DHT11_temp_hum[4][0]/4);//guardo el promedio 
-        DHT11_temp_hum[4][1] = (DHT11_temp_hum[4][1]/4);
+        DHT11_temp_hum[4][0] = (DHT11_temp_hum[4][0] / 4 );//guardo el promedio 
+        DHT11_temp_hum[4][1] = (DHT11_temp_hum[4][1] / 4);
         estados_CDR_Automatico = Ventilacion;
+        Serial.print("temperatura");
+        Serial.println(DHT11_temp_hum[4][0]);
+        Serial.print("humedad");
+        Serial.println(DHT11_temp_hum[4][1]);
       }
       break;
-      case
+    case Sensor_LDR://debería leer el valor de ADC sobre el LDR pero no lo estoy usando de momento. 
+      if (muestras_suelo >= 10)
+      {
+        muestras_suelo = 0;
+      }
+      if(muestras_DHT11 >= 4 )
+      {
+        muestras_DHT11=0;
+      }
+      estados_CDR_Automatico = INICIO;
+      break;
+    case Ventilacion:
+      if (DHT11_temp_hum[4][0] >= temp_ref)
+      {
+        Ventilacion_encender = true;
+      }
+      if (DHT11_temp_hum[4][0] <= temp_ref * 0.95)
+      {
+        Ventilacion_encender = false;
+      }
+      estados_CDR_Automatico = INICIO;
+      break;
+    default:
+      lcd.clear();
+      lcd.setCursor(8,1);
+      lcd.print("ERROR");
+      break;
   }
 }
-
 
 void setup() {
   GPIO_setup();
@@ -356,7 +393,13 @@ void setup() {
 void loop() {
 
   estados_CDR_Automatico = INICIO;
-
+  while (true)
+  {
+    automatico_MEF();
+  }
+  
+  
+/*
   lcd.setCursor(0,1);
   lcd.flush();
     uint16_t a = 0;
@@ -364,11 +407,11 @@ void loop() {
     lcd.print("heyyy");
     lcd.print(a); 
 
-  if(a <= 512)
+  if(a <= 512) 
   {
     digitalWrite(A3,HIGH);
   }
-  else digitalWrite(A3,LOW);
+  else digitalWrite(A3,LOW); */
   /*if(timer2_500ms)
   {
     
