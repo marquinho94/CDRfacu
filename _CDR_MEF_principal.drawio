@@ -59,7 +59,7 @@
         </mxGraphModel>
     </diagram>
     <diagram id="2yHrIm8f3ps8T4j3jmnp" name="Automático">
-        <mxGraphModel dx="974" dy="734" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+        <mxGraphModel dx="626" dy="291" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
             <root>
                 <mxCell id="VG5reM1JGWSKIXkfuv2--0"/>
                 <mxCell id="VG5reM1JGWSKIXkfuv2--1" parent="VG5reM1JGWSKIXkfuv2--0"/>
@@ -182,7 +182,7 @@
         </mxGraphModel>
     </diagram>
     <diagram id="McJcfVEzGvFuaT09IdFO" name="ACTUADORES">
-        <mxGraphModel dx="1060" dy="478" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+        <mxGraphModel dx="626" dy="291" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
             <root>
                 <mxCell id="_UozBr8ZX9ysjcTVr0fY-0"/>
                 <mxCell id="_UozBr8ZX9ysjcTVr0fY-1" parent="_UozBr8ZX9ysjcTVr0fY-0"/>

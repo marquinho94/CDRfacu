@@ -276,14 +276,24 @@ void automatico_MEF (void)
   static float DHT11_temp_hum [5][2]; //tomo menos muestras por el tiempo de demora
   static uint8_t muestras_suelo = 0; 
   static uint8_t muestras_DHT11 = 0;
-
+  uint16_t x = map(suelo_ADC[10], 0, 1024, 0, 100); //MEGA PARCHE
   Serial.println (estados_CDR_Automatico);
   switch ( estados_CDR_Automatico )
   {
     case INICIO:
       
-      lcd.setCursor(0,0);
+      lcd.setCursor(1,0);
       lcd.print("CDR AUTOMATICO");
+      lcd.setCursor(0,1);
+      lcd.print("T:");
+      lcd.print(DHT11_temp_hum[4][0],1);
+      lcd.print("C");
+      lcd.setCursor(9,1);
+      lcd.print("H:");
+      
+      lcd.print(x);//MEGA PARCHE
+      lcd.setCursor(14,1);
+      lcd.print("%");
       estados_CDR_Automatico = Sensor_Suelo;
       // sentencias de prueba //
 
@@ -393,6 +403,7 @@ void setup() {
 void loop() {
 
   estados_CDR_Automatico = INICIO;
+  lcd.clear(); 
   while (true)
   {
     automatico_MEF();
