@@ -11,7 +11,7 @@
 bool timer2_flag250 = false;
 typedef enum  {INICIO, Sensor_Suelo, Riego, Sensor_DHT11, Ventilacion, Sensor_LDR} estados_automatico;
 estados_automatico estados_CDR_Automatico;
-uint16_t Humedad_suelo = 0x512;
+uint16_t Humedad_suelo = 512;
 bool Riego_encender = 0; 
 float temp_ref = 0;
 float humedad_ref = 0;
@@ -157,7 +157,7 @@ void GPIO_setup (void) //Congif de puertos
 {
   //pinMode(LED_BUILTIN,OUTPUT); //led 
   //pinMode(PD1,OUTPUT);
-  pinMode(A3,OUTPUT);
+  pinMode(A3,OUTPUT);//bomba
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(2, OUTPUT);
   MCUCR |= (1 << PUD ); //habilito las pull up en general port b 
@@ -276,12 +276,12 @@ void automatico_MEF (void)
   static float DHT11_temp_hum [5][2]; //tomo menos muestras por el tiempo de demora
   static uint8_t muestras_suelo = 0; 
   static uint8_t muestras_DHT11 = 0;
-  uint16_t x = map(suelo_ADC[10], 0, 1024, 0, 100); //MEGA PARCHE
+  uint16_t x = map(suelo_ADC[10], 0, 1030, 0, 100); //MEGA PARCHE
   Serial.println (estados_CDR_Automatico);
   switch ( estados_CDR_Automatico )
   {
     case INICIO:
-      
+      lcd.clear();
       lcd.setCursor(1,0);
       lcd.print("CDR AUTOMATICO");
       lcd.setCursor(0,1);
@@ -290,7 +290,6 @@ void automatico_MEF (void)
       lcd.print("C");
       lcd.setCursor(9,1);
       lcd.print("H:");
-      
       lcd.print(x);//MEGA PARCHE
       lcd.setCursor(14,1);
       lcd.print("%");
@@ -390,7 +389,54 @@ void automatico_MEF (void)
   }
 }
 
-void setup() {
+typedef enum {RESET , ON , OFF} estados_ACTUADORES;
+estados_ACTUADORES estados_bomba = RESET;
+
+void bomba_MEF (void)
+{
+  switch (estados_bomba)
+  {
+    case RESET:
+    {
+      if (Riego_encender)
+      {
+        estados_bomba = ON;
+      }
+      else estados_bomba = OFF;
+    
+      break;
+    }
+    case ON:
+    {
+      bitSet(PORTC,3);//bomba con bit set es más eficiente 
+      if (Riego_encender)
+      {
+        estados_bomba = ON;
+      }
+      else estados_bomba = OFF;
+      break;
+    }
+    case OFF:
+    {
+      bitClear(PORTC,3);//bomba con bit set es más eficiente 
+      if (Riego_encender)
+      {
+        estados_bomba = ON;
+      }
+      else estados_bomba = OFF;
+      break;
+    }
+    default:
+    {
+      lcd.print("ERROR");
+    
+      break;
+    }
+  }
+} 
+
+void setup() 
+{
   GPIO_setup();
   LCD_setup();
   timer2_setup();
@@ -407,6 +453,7 @@ void loop() {
   while (true)
   {
     automatico_MEF();
+    bomba_MEF();
   }
   
   
