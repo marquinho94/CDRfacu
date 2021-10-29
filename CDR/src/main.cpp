@@ -13,10 +13,12 @@ typedef enum  {INICIO, Sensor_Suelo, Riego, Sensor_DHT11, Ventilacion, Sensor_LD
 estados_automatico estados_CDR_Automatico;
 uint16_t Humedad_suelo = 512;
 bool Riego_encender = 0; 
-float temp_ref = 0;
+float temp_ref = 35;
 float humedad_ref = 0;
 
 bool Ventilacion_encender = 0;
+
+bool Iluminacion_encender = 0;
 
 //VARIABLES DE PRUEBA
 uint32_t interrupcion = 0 ;
@@ -96,7 +98,7 @@ DHT_Unified dht(DHTPIN, DHTTYPE);
 //uint32_t delayMS;
 
 void DHT11_setup() {
-  Serial.begin(9600);
+  //Serial.begin(9600);
   // Initialize device.
   dht.begin();
   Serial.println(F("DHTxx Unified Sensor Example"));
@@ -124,6 +126,7 @@ void DHT11_setup() {
   Serial.println(F("------------------------------------"));
   // Set delay between sensor readings based on sensor details.
   //delayMS = sensor.min_delay / 1000; -> USO EL TICK DE GENERADO POR TIMER2
+  return;
 }
 
 void DHT11_lectura() {
@@ -158,6 +161,8 @@ void GPIO_setup (void) //Congif de puertos
   //pinMode(LED_BUILTIN,OUTPUT); //led 
   //pinMode(PD1,OUTPUT);
   pinMode(A3,OUTPUT);//bomba
+  pinMode(A2,OUTPUT); // VENTILACIÓN
+  pinMode(13,OUTPUT); // ILUMINACION
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(2, OUTPUT);
   MCUCR |= (1 << PUD ); //habilito las pull up en general port b 
@@ -172,6 +177,7 @@ void encoder_setup (void)
   PCICR |= 0b00000001;//(1 << PCIE0);  //HABILITO LA INT POR CAMBIO EN LOS PINES PCINT  7 - 0 
   PCMSK0 |= 0b00000011;//((1 << PCINT0) | (1 << PCINT1)); //CONFIGURO LA MÁSCARA DE INTERRUPCION PARA LOS PINES PB0 Y PB1 
   sei();
+  return;
 }
 
 
@@ -195,10 +201,13 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 
 
 void rtcC_setup () 
-{
-  //Serial.begin(9600); Iniciado en el setup dht11
-
+{ //Wire.begin();
+  //Serial.begin(9600);// Iniciado en el setup dht11
+  //Wire.beginTransmission(DS1307_ADDRESS);
+  Serial.println("iniciando rtcc");
   rtc.begin(); //Inicializamos el RTC
+  
+  Serial.println("inicia");
   Serial.println("Estableciendo Hora y fecha...");
   rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   Serial.println("DS1307 actualizado con la hora y fecha que se compilo este programa:");
@@ -206,6 +215,7 @@ void rtcC_setup ()
   Serial.print(__DATE__);
   Serial.print("  Hora = ");
   Serial.println(__TIME__);
+  return;
 }
 void rtcc_lectura_prueba () {
     DateTime now = rtc.now();
@@ -391,6 +401,8 @@ void automatico_MEF (void)
 
 typedef enum {RESET , ON , OFF} estados_ACTUADORES;
 estados_ACTUADORES estados_bomba = RESET;
+estados_ACTUADORES estados_ventilacion = RESET;
+estados_ACTUADORES estados_iluminacion = RESET;
 
 void bomba_MEF (void)
 {
@@ -398,6 +410,7 @@ void bomba_MEF (void)
   {
     case RESET:
     {
+      bitClear(PORTC,3);//en el reset apago la bomba por las dudas
       if (Riego_encender)
       {
         estados_bomba = ON;
@@ -428,7 +441,95 @@ void bomba_MEF (void)
     }
     default:
     {
-      lcd.print("ERROR");
+      lcd.print("ERROR RIEGO");
+    
+      break;
+    }
+  }
+} 
+void ventilacion_MEF (void)
+{
+  switch (estados_ventilacion)
+  {
+    case RESET:
+    {
+      bitClear(PORTC,2);//en el reset apago la bomba por las dudas
+      if (Ventilacion_encender)
+      {
+        estados_ventilacion = ON;
+      }
+      else estados_ventilacion = OFF;
+    
+      break;
+    }
+    case ON:
+    {
+      bitSet(PORTC,2);//bomba con bit set es más eficiente 
+      if (Ventilacion_encender)
+      {
+        estados_ventilacion = ON;
+      }
+      else estados_ventilacion = OFF;
+      break;
+    }
+    case OFF:
+    {
+      bitClear(PORTC,2);//bomba con bit set es más eficiente 
+      if (Ventilacion_encender)
+      {
+        estados_ventilacion = ON;
+      }
+      else estados_ventilacion = OFF;
+      break;
+    }
+    default:
+    {
+      lcd.print("ERROR VENTI");
+    
+      break;
+    }
+  }
+} 
+
+
+void iluminacion_MEF (void)
+{
+  switch (estados_iluminacion)
+  {
+    case RESET:
+    {
+      bitClear(PORTB,5);//en el reset apago la bomba por las dudas
+      if (Iluminacion_encender)
+      {
+        estados_iluminacion = ON;
+      }
+      else estados_iluminacion = OFF;
+    
+      break;
+    }
+    case ON:
+    {
+      bitSet(PORTB,5);//bomba con bit set es más eficiente 
+      if (Iluminacion_encender)
+      {
+        estados_iluminacion = ON;
+      }
+      else estados_iluminacion = OFF;
+      break;
+    }
+    case OFF:
+    {
+      bitClear(PORTB,5);//bomba con bit set es más eficiente 
+      if (Iluminacion_encender)
+      {
+        estados_iluminacion = ON;
+      }
+      else estados_iluminacion = OFF;
+      break;
+    }
+    default:
+    {
+      lcd.print("ERROR ILUMIN.");
     
       break;
     }
@@ -437,12 +538,18 @@ void bomba_MEF (void)
 
 void setup() 
 {
+  Serial.begin(9600);
+  rtcC_setup();
   GPIO_setup();
   LCD_setup();
+  Serial.println("LCD OK");
   timer2_setup();
   DHT11_setup();
+  Serial.println("DHT OK");
   encoder_setup();
-  rtcC_setup();
+  Serial.println("encoder OK");
+  
+  Serial.println("FIN SET UP");
   //ADC_setup();
 }
 
@@ -454,40 +561,9 @@ void loop() {
   {
     automatico_MEF();
     bomba_MEF();
+    iluminacion_MEF();
+    ventilacion_MEF();
   }
   
-  
-/*
-  lcd.setCursor(0,1);
-  lcd.flush();
-    uint16_t a = 0;
-    a = ADC_lectura();
-    lcd.print("heyyy");
-    lcd.print(a); 
-
-  if(a <= 512) 
-  {
-    digitalWrite(A3,HIGH);
-  }
-  else digitalWrite(A3,LOW); */
-  /*if(timer2_500ms)
-  {
-    
-    Serial.println(interrupcion);
-    DHT11_lectura();
-    if(bitRead(interrupcion,0) == 0)
-    {
-      digitalWrite(2,HIGH);
-      rtcc_lectura_prueba();
-    }
-    else digitalWrite(2,LOW);
-    
-  }
-  */
-  /*else 
-  {
-    lcd.setCursor(0,1);
-    lcd.print("cero            ");
-  }*/
 }
 
