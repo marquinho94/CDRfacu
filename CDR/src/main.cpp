@@ -180,12 +180,11 @@ void encoder_setup (void)
   return;
 }
 
-
+//INTERRUPCIÓN POR CAMBIO DE ESTADO
 ISR (PCINT0_vect)
 {
-
   ++interrupcion;
-
+ 
 }
 
 
