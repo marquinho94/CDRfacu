@@ -170,7 +170,8 @@ void GPIO_setup (void) //Congif de puertos
   PORTB |= 0b00000011;//((1<< PORTB0) || (1<< PORTB1)  ); //(ACTIVO LAS PULLUP EN LAS ENTRADAS PB0 Y 1 )
 }
 
-
+uint16_t encoder_izq=0;
+uint16_t encoder_der=0;
 void encoder_setup (void)
 {
   cli();// DESHABILITO LAS INTERRUPCIONES DURANTE LA CONFIG 
@@ -184,7 +185,19 @@ void encoder_setup (void)
 ISR (PCINT0_vect)
 {
   ++interrupcion;
- 
+  if (bitRead(PORTB,0) == bitRead(PORTB,1))
+  {
+    
+    
+      ++encoder_izq;
+    
+  }
+
+  if (bitRead(PORTB,1) != bitRead(PORTB,0))
+  {
+    ++encoder_der;
+  }
+  
 }
 
 
@@ -292,7 +305,10 @@ void automatico_MEF (void)
     case INICIO:
       lcd.clear();
       lcd.setCursor(1,0);
-      lcd.print("CDR AUTOMATICO");
+      //lcd.print("CDR AUTOMATICO");
+      lcd.print(encoder_der);
+      lcd.print(interrupcion);
+      lcd.print(encoder_izq);
       lcd.setCursor(0,1);
       lcd.print("T:");
       lcd.print(DHT11_temp_hum[4][0],1);
