@@ -295,7 +295,7 @@ void encoder (void)
       {
         ++encoder_izq;
       }
-    
+    //
     }
     break;
     
