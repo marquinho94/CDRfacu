@@ -13,7 +13,7 @@ typedef enum  {INICIO, Sensor_Suelo, Riego, Sensor_DHT11, Ventilacion, Sensor_LD
 estados_automatico estados_CDR_Automatico;
 uint16_t Humedad_suelo = 512;
 bool Riego_encender = 0; 
-float temp_ref = 35;
+float temp_ref = 28;
 float humedad_ref = 0;
 
 bool Ventilacion_encender = 0;
@@ -38,7 +38,8 @@ void LCD_setup() {
   lcd.setCursor(0,0);
   lcd.println("SISTEMA DE RIEGO");
   lcd.setCursor(0,2);
-  lcd.print("UNLaM - Taller de Electronica");
+  lcd.print("UNLaM - Taller Elca.");
+  _delay_ms(1500);
   /*for (int positionCounter = 0; positionCounter < 31; positionCounter++)
     {
       lcd.scrollDisplayLeft();
@@ -66,15 +67,16 @@ void timer2_setup(void)
 
 /*interrupcion timer 2 cada 10ms (100hz) 
 Nesecita declarar variable global bit timer2_500ms=0 */
-
+bool Encoder_espera_flag = false;
 ISR(TIMER2_COMPA_vect)
 {
   static uint8_t timer2_contador = 0; //mantiene el valor de la ejecución anterior 
   static uint8_t timer2_contador_250 = 0;
-  
+  static uint8_t timer2_contador_50 = 0;
 
   ++timer2_contador; 
   ++timer2_contador_250;
+  ++timer2_contador_50;
   if(timer2_contador_250 >= 25)
   {
     timer2_flag250 = true;
@@ -85,6 +87,13 @@ ISR(TIMER2_COMPA_vect)
     timer2_500ms ^= 1; // operación XOR con 1 para togglear el flag
     timer2_contador = 0;
   }
+  if(timer2_contador_50 >= 20)
+  {
+    // operación XOR con 1 para togglear el flag
+    timer2_contador_50 = 0;
+    Encoder_espera_flag = true;
+  }
+   
 }
 
 
@@ -182,24 +191,162 @@ void encoder_setup (void)
 }
 
 //INTERRUPCIÓN POR CAMBIO DE ESTADO
+bool encoder_pin8_toggle;
+bool encoder_pin9_toggle;
+typedef enum {INI,PIN8_INT, PIN8_LECTURA, PIN9_INT, PIN9_LECTURA} Encodertype;
+Encodertype encoder_MEF = INI;
+
 ISR (PCINT0_vect)
 {
-  ++interrupcion;
-  if (bitRead(PORTB,0) == bitRead(PORTB,1))
-  {
-    
-    
+  //++interrupcion;
+  static int Encoder_pin1_anterior = 0;
+
+  if(digitalRead(8)==0)
+  { 
+    /*delay_ms(100);
+
+    if (digitalRead(8) ==digitalRead(9))
+    {
+      ++encoder_der;
+    }
+    else
+    {
       ++encoder_izq;
-    
+    }*/
+    encoder_pin8_toggle=true;
+    return;
   }
 
-  if (bitRead(PORTB,1) != bitRead(PORTB,0))
-  {
-    ++encoder_der;
+  if(digitalRead(9)==0)
+  { 
+    /*_delay_ms(100);
+
+    if (digitalRead(8) !=digitalRead(9))
+    {
+      ++encoder_der;
+    }
+    else
+    {
+      ++encoder_izq;
+    }*/
+    encoder_pin9_toggle = true;
+    return;
   }
+
+
+  
+/*
+  Encoder_pin1_anterior = bitRead(PORTB,1);
+
+  _delay_ms(10);
+  if(bitRead(PORTB,1)==1)
+  {
+    if (Encoder_pin1_anterior == 0)
+    {
+      if(bitRead(PORTB,0))
+      {
+        ++encoder_der;
+      }
+      if (bitRead(PORTB,0))
+      {
+        ++encoder_izq;
+      }
+      
+    } 
+  }*/
+
+  
   
 }
 
+/// lectura de encoder
+
+
+
+void encoder (void)
+{
+  switch (encoder_MEF)
+  {
+  case INI:
+    if (encoder_pin8_toggle)
+    {
+      Encoder_espera_flag = false;
+      encoder_MEF = PIN8_INT;
+      encoder_pin8_toggle = false;
+    }
+    if (encoder_pin9_toggle)
+    {
+      Encoder_espera_flag = false;
+      encoder_MEF = PIN9_INT;
+      encoder_pin9_toggle = false;
+    }
+    
+    break;
+  case PIN8_INT:
+    if (Encoder_espera_flag)
+    {
+      Encoder_espera_flag=false;
+      encoder_MEF = PIN8_LECTURA;
+        if (digitalRead(8) == digitalRead(9))
+      {
+        ++encoder_der;
+      }
+      if (digitalRead(8) != digitalRead(9))
+      {
+        ++encoder_izq;
+      }
+    
+    }
+    break;
+    
+  case PIN8_LECTURA:
+    /*if (digitalRead(8) ==digitalRead(9))
+    {
+      ++encoder_der;
+    }
+    else
+    {
+      ++encoder_izq;
+    }*/
+   
+    encoder_MEF = INI;
+    break;
+  
+  case PIN9_INT:
+    if (Encoder_espera_flag)
+    {
+      Encoder_espera_flag=false;
+      encoder_MEF = PIN9_LECTURA;
+      if (digitalRead(8) !=digitalRead(9))
+      {
+        ++encoder_der;
+      }
+      if(digitalRead(8) == digitalRead(9))
+      {
+        ++encoder_izq;
+      }
+    }
+    break;
+    
+  case PIN9_LECTURA:
+    /*if (digitalRead(8) !=digitalRead(9))
+    {
+      ++encoder_der;
+    }
+    else
+    {
+      ++encoder_izq;
+    }
+    */
+   
+    encoder_MEF = INI;
+    break;
+
+  default:
+    encoder_MEF=INI;
+    break;
+  }
+}
 
 // Date and time functions using a DS1307 RTC connected via I2C and Wire lib
 
@@ -298,8 +445,10 @@ void automatico_MEF (void)
   static float DHT11_temp_hum [5][2]; //tomo menos muestras por el tiempo de demora
   static uint8_t muestras_suelo = 0; 
   static uint8_t muestras_DHT11 = 0;
-  uint16_t x = map(suelo_ADC[10], 0, 1030, 0, 100); //MEGA PARCHE
+  static uint16_t ldr_ADC= 0;
+  uint16_t x = map(suelo_ADC[10], 0, 1023, 0, 100); //MEGA PARCHE
   Serial.println (estados_CDR_Automatico);
+  DateTime now = rtc.now();
   switch ( estados_CDR_Automatico )
   {
     case INICIO:
@@ -309,6 +458,16 @@ void automatico_MEF (void)
       lcd.print(encoder_der);
       lcd.print(interrupcion);
       lcd.print(encoder_izq);
+      /*
+      lcd.print(now.hour(), DEC);
+      lcd.print(':');
+      lcd.print(now.minute(), DEC);
+      lcd.print(':');
+      lcd.print(now.second(), DEC);
+      */
+      lcd.setCursor(11,0);
+      lcd.print("L:");
+      lcd.print(ldr_ADC);
       lcd.setCursor(0,1);
       lcd.print("T:");
       lcd.print(DHT11_temp_hum[4][0],1);
@@ -385,6 +544,17 @@ void automatico_MEF (void)
       }
       break;
     case Sensor_LDR://debería leer el valor de ADC sobre el LDR pero no lo estoy usando de momento. 
+      ldr_ADC = analogRead(A1);
+      //temporal solo de prueba ->
+      if(ldr_ADC <= 200)
+      {
+        Iluminacion_encender = true;
+      }
+      if (ldr_ADC >= 600)
+      {
+        Iluminacion_encender =false;
+      }
+      
       if (muestras_suelo >= 10)
       {
         muestras_suelo = 0;
@@ -468,7 +638,7 @@ void ventilacion_MEF (void)
   {
     case RESET:
     {
-      bitClear(PORTC,2);//en el reset apago la bomba por las dudas
+      bitClear(PORTC,2);
       if (Ventilacion_encender)
       {
         estados_ventilacion = ON;
@@ -479,7 +649,7 @@ void ventilacion_MEF (void)
     }
     case ON:
     {
-      bitSet(PORTC,2);//bomba con bit set es más eficiente 
+      bitSet(PORTC,2);
       if (Ventilacion_encender)
       {
         estados_ventilacion = ON;
@@ -489,7 +659,7 @@ void ventilacion_MEF (void)
     }
     case OFF:
     {
-      bitClear(PORTC,2);//bomba con bit set es más eficiente 
+      bitClear(PORTC,2);
       if (Ventilacion_encender)
       {
         estados_ventilacion = ON;
@@ -513,7 +683,7 @@ void iluminacion_MEF (void)
   {
     case RESET:
     {
-      bitClear(PORTB,5);//en el reset apago la bomba por las dudas
+      bitClear(PORTB,5);
       if (Iluminacion_encender)
       {
         estados_iluminacion = ON;
@@ -524,7 +694,7 @@ void iluminacion_MEF (void)
     }
     case ON:
     {
-      bitSet(PORTB,5);//bomba con bit set es más eficiente 
+      bitSet(PORTB,5);
       if (Iluminacion_encender)
       {
         estados_iluminacion = ON;
@@ -534,7 +704,7 @@ void iluminacion_MEF (void)
     }
     case OFF:
     {
-      bitClear(PORTB,5);//bomba con bit set es más eficiente 
+      bitClear(PORTB,5);
       if (Iluminacion_encender)
       {
         estados_iluminacion = ON;
@@ -571,6 +741,7 @@ void setup()
 void loop() {
 
   estados_CDR_Automatico = INICIO;
+  encoder_MEF = INI;
   lcd.clear(); 
   while (true)
   {
@@ -578,6 +749,7 @@ void loop() {
     bomba_MEF();
     iluminacion_MEF();
     ventilacion_MEF();
+    encoder();
   }
   
 }
