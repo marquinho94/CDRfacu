@@ -177,25 +177,60 @@ void GPIO_setup (void) //Congif de puertos
   MCUCR |= (1 << PUD ); //habilito las pull up en general port b 
   DDRB &= 0b11111100;//((0 << DDB0) | (0 << DDB1)); //coniguracion i/o pines port b con 1-> salida  
   PORTB |= 0b00000011;//((1<< PORTB0) || (1<< PORTB1)  ); //(ACTIVO LAS PULLUP EN LAS ENTRADAS PB0 Y 1 )
+  DDRD &= 0b11110011;// int 0 int 1 como entradas 
 }
 
 uint16_t encoder_izq=0;
 uint16_t encoder_der=0;
 void encoder_setup (void)
 {
+
+  // ESTO ES POR INT POR CAMBIO DE ESTADO
+  /*
   cli();// DESHABILITO LAS INTERRUPCIONES DURANTE LA CONFIG 
   PCICR |= 0b00000001;//(1 << PCIE0);  //HABILITO LA INT POR CAMBIO EN LOS PINES PCINT  7 - 0 
   PCMSK0 |= 0b00000011;//((1 << PCINT0) | (1 << PCINT1)); //CONFIGURO LA MÁSCARA DE INTERRUPCION PARA LOS PINES PB0 Y PB1 
   sei();
-  return;
+  return;*/
+
+  //ESTO ES POR INT POR FLANCO
+  cli();
+  EICRA |= ((1 << ISC11) | (1 << ISC01));
+  EICRA &= ((0 << ISC10) | (0 << ISC00)); //config int 0 int 1 por flanco descendente 
+  EIMSK |= ((1 << INT1) | (1 << INT0)); //habilito las int 0 y1 
+  sei();
 }
+/*
+ISR(INT0_vect)
+{
+if (digitalRead(2) == digitalRead(3))
+    {
+      ++encoder_der;
+    }
+    else
+    {
+      ++encoder_izq;
+    }
+}
+ISR(INT1_vect)
+{
+if (digitalRead(2) != digitalRead(3))
+    {
+      ++encoder_der;
+    }
+    else
+    {
+      ++encoder_izq;
+    }
+}
+*/
 
 //INTERRUPCIÓN POR CAMBIO DE ESTADO
 bool encoder_pin8_toggle;
 bool encoder_pin9_toggle;
 typedef enum {INI,PIN8_INT, PIN8_LECTURA, PIN9_INT, PIN9_LECTURA} Encodertype;
 Encodertype encoder_MEF = INI;
-
+/*
 ISR (PCINT0_vect)
 {
   //++interrupcion;
@@ -203,7 +238,7 @@ ISR (PCINT0_vect)
 
   if(digitalRead(8)==0)
   { 
-    /*delay_ms(100);
+    delay_ms(100);
 
     if (digitalRead(8) ==digitalRead(9))
     {
@@ -212,14 +247,13 @@ ISR (PCINT0_vect)
     else
     {
       ++encoder_izq;
-    }*/
+    
     encoder_pin8_toggle=true;
     return;
   }
-
   if(digitalRead(9)==0)
   { 
-    /*_delay_ms(100);
+    _delay_ms(100);
 
     if (digitalRead(8) !=digitalRead(9))
     {
@@ -228,11 +262,11 @@ ISR (PCINT0_vect)
     else
     {
       ++encoder_izq;
-    }*/
+    
     encoder_pin9_toggle = true;
     return;
   }
-
+*/
 
   
 /*
@@ -253,12 +287,12 @@ ISR (PCINT0_vect)
       }
       
     } 
-  }*/
+  }
 
   
   
 }
-
+*/
 /// lectura de encoder
 
 
@@ -295,7 +329,7 @@ void encoder (void)
       {
         ++encoder_izq;
       }
-    //
+    
     }
     break;
     
@@ -456,7 +490,7 @@ void automatico_MEF (void)
       lcd.setCursor(1,0);
       //lcd.print("CDR AUTOMATICO");
       lcd.print(encoder_der);
-      lcd.print(interrupcion);
+     // lcd.print(interrupcion);
       lcd.print(encoder_izq);
       /*
       lcd.print(now.hour(), DEC);
@@ -741,7 +775,7 @@ void setup()
 void loop() {
 
   estados_CDR_Automatico = INICIO;
-  encoder_MEF = INI;
+  //encoder_MEF = INI;
   lcd.clear(); 
   while (true)
   {
@@ -749,7 +783,7 @@ void loop() {
     bomba_MEF();
     iluminacion_MEF();
     ventilacion_MEF();
-    encoder();
+   // encoder();
   }
   
 }
