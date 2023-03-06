@@ -91,7 +91,7 @@ ISR(TIMER2_COMPA_vect)
   {
     // operación XOR con 1 para togglear el flag
     timer2_contador_50 = 0;
-    Encoder_espera_flag = true;
+    Encoder_espera_flag = true;//comentario de prueba
   }
    
 }
